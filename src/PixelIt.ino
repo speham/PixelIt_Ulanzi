@@ -169,8 +169,8 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 
 // Matrix Vars
-int currentMatrixBrightness = 127;
-bool matrixBrightnessAutomatic = true;
+int currentMatrixBrightness = 125;
+bool matrixBrightnessAutomatic = false;
 int mbaDimMin = 20;
 int mbaDimMax = 100;
 int mbaLuxMin = 0;
@@ -260,7 +260,7 @@ float pressureOffset = 0.0f;
 float gasOffset = 0.0f;
 
 // Other Vars
-bool sendTelemetry = true;
+bool sendTelemetry = false;
 unsigned long sendTelemetryPrevMillis = 0;
 unsigned long forcedScreenIsActiveUntil = 0;
 bool checkUpdateScreen = false;
@@ -1462,8 +1462,6 @@ String GetSensor()
         const float currentHumi = sht31.readHumidity();
         root["temperature"] = currentTemp + temperatureOffset;
         root["humidity"] = roundf(currentHumi + humidityOffset);
-        root["pressure"] = "Not installed";
-        root["gas"] = "Not installed";
 
         if (temperatureUnit == TemperatureUnit_Fahrenheit)
         {
@@ -1475,8 +1473,6 @@ String GetSensor()
     {
         root["humidity"] = "Not installed";
         root["temperature"] = "Not installed";
-        root["pressure"] = "Not installed";
-        root["gas"] = "Not installed";
     }
 
     String json;
@@ -2079,12 +2075,12 @@ boolean MQTTreconnect()
     if (mqttUser != NULL && mqttUser.length() > 0 && mqttPassword != NULL && mqttPassword.length() > 0)
     {
         Log(F("MQTTreconnect"), F("MQTT connecting to broker..."));
-        connected = client.connect(hostname.c_str(), mqttUser.c_str(), mqttPassword.c_str(), (mqttMasterTopic + "state").c_str(), 0, true, "disconnected");
+        connected = client.connect(hostname.c_str(), mqttUser.c_str(), mqttPassword.c_str(), (mqttMasterTopic + "state").c_str(), 0, true, "OFFLINE");
     }
     else
     {
         Log(F("MQTTreconnect"), F("MQTT connecting to broker..."));
-        connected = client.connect(hostname.c_str(), (mqttMasterTopic + "state").c_str(), 0, true, "disconnected");
+        connected = client.connect(hostname.c_str(), (mqttMasterTopic + "state").c_str(), 0, true, "OFFLINE");
     }
 
     if (connected)
@@ -2097,7 +2093,7 @@ boolean MQTTreconnect()
         client.subscribe((mqttMasterTopic + "getConfig").c_str());
         client.subscribe((mqttMasterTopic + "setConfig").c_str());
         // ... and publish state ....
-        client.publish((mqttMasterTopic + "state").c_str(), "connected", true);
+        client.publish((mqttMasterTopic + "state").c_str(), "ONLINE", true);
 
         // ... and provide discovery information
         // Create discovery information for Homeassistant
@@ -2879,9 +2875,7 @@ void setup()
     // Mounting FileSystem
     Serial.println(F("Mounting file system..."));
 
-    if (SPIFFS.begin())
-
-    {
+    if (SPIFFS.begin(true))    {
         Serial.println(F("Mounted file system."));
         LoadConfig();
         // If new version detected, create new variables in config if necessary.
@@ -2986,6 +2980,7 @@ void setup()
     }
     WiFi.hostname(hostname);
 
+    WiFi.mode(WIFI_AP);
     wifiManager.setAPCallback(EnteredHotspotCallback);
     wifiManager.setMinimumSignalQuality();
     // Timout for the wifi connection until the hotspot is set up
