@@ -2988,6 +2988,10 @@ void setup()
     // Config menue timeout 180 seconds.
     wifiManager.setConfigPortalTimeout(180);
 
+    wifiManager.setConnectTimeout(180);
+    wifiManager.setConnectRetries(100);
+    
+    if (wifiManager.getWiFiIsSaved()) wifiManager.setEnableConfigPortal(false);
     if (!wifiManager.autoConnect("PIXELIT"))
     {
         Log(F("Setup"), F("Wifi failed to connect and hit timeout"));
